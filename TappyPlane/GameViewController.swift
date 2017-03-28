@@ -10,15 +10,33 @@ import UIKit
 import SpriteKit
 
 extension SKNode {
-    class func unarchiveFromFile(file : NSString) -> SKNode? {
-        if let path = NSBundle.mainBundle().pathForResource(file, ofType: "sks") {
-            var sceneData = NSData(contentsOfFile: path, options: .DataReadingMappedIfSafe, error: nil)!
-            var archiver = NSKeyedUnarchiver(forReadingWithData: sceneData)
-            
-            archiver.setClass(self.classForKeyedUnarchiver(), forClassName: "SKScene")
-            let scene = archiver.decodeObjectForKey(NSKeyedArchiveRootObjectKey) as GameScene
-            archiver.finishDecoding()
-            return scene
+    
+//    class func unarchiveFromFile(_ file : String) -> SKNode? {
+//        if let path = Bundle.main.path(forResource: file as String, ofType: "sks") {
+//            var sceneData = Data(contentsOf: path, count: .DataReadingMappedIfSafe, deallocator: nil)!
+//            var archiver = NSKeyedUnarchiver(forReadingWithData: sceneData)
+//            
+//            archiver.setClass(self.classForKeyedUnarchiver(), forClassName: "SKScene")
+//            let scene = archiver.decodeObjectForKey(NSKeyedArchiveRootObjectKey) as GameScene
+//            archiver.finishDecoding()
+//            return scene
+//        } else {
+//            return nil
+//        }
+    
+    class func unarchiveFromFile(_ file : String) -> SKNode? {
+        if let url = Bundle.main.url(forResource: file, withExtension: "sks") {
+            do {
+                let sceneData = try Data(contentsOf: url)
+                let archiver = NSKeyedUnarchiver(forReadingWith: sceneData)
+                
+                archiver.setClass(self.classForKeyedUnarchiver(), forClassName: "SKScene")
+                let scene = archiver.decodeObject(forKey: NSKeyedArchiveRootObjectKey) as! GameScene
+                archiver.finishDecoding()
+                return scene
+            } catch {
+                return nil
+            }
         } else {
             return nil
         }
@@ -32,7 +50,7 @@ class GameViewController: UIViewController {
 
         if let scene = GameScene.unarchiveFromFile("GameScene") as? GameScene {
             // Configure the view.
-            let skView = self.view as SKView
+            let skView = self.view as! SKView
             skView.showsFPS = true
             skView.showsNodeCount = true
             
@@ -40,21 +58,21 @@ class GameViewController: UIViewController {
             skView.ignoresSiblingOrder = true
             
             /* Set the scale mode to scale to fit the window */
-            scene.scaleMode = .AspectFill
+            scene.scaleMode = .aspectFill
             
             skView.presentScene(scene)
         }
     }
 
-    override func shouldAutorotate() -> Bool {
+    override var shouldAutorotate : Bool {
         return true
     }
 
-    override func supportedInterfaceOrientations() -> Int {
-        if UIDevice.currentDevice().userInterfaceIdiom == .Phone {
-            return Int(UIInterfaceOrientationMask.AllButUpsideDown.rawValue)
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            return UIInterfaceOrientationMask.allButUpsideDown
         } else {
-            return Int(UIInterfaceOrientationMask.All.rawValue)
+            return UIInterfaceOrientationMask.all
         }
     }
 
@@ -63,7 +81,7 @@ class GameViewController: UIViewController {
         // Release any cached data, images, etc that aren't in use.
     }
 
-    override func prefersStatusBarHidden() -> Bool {
+    override var prefersStatusBarHidden : Bool {
         return true
     }
 }
