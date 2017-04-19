@@ -22,7 +22,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var score = 0
     var movingObjects = SKNode()
     var scoreLabel = SKLabelNode()
+    var startLabel = SKLabelNode()
     var gameLabel = SKLabelNode()
+    var makePlaneFly = SKAction()
     
     func makeBackground(){
         let backgroundImage = SKTexture(imageNamed: "images/background.png")
@@ -47,7 +49,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let planeImage2 = SKTexture(imageNamed: "images/planeRed2.png")
         let planeImage3 = SKTexture(imageNamed: "images/planeRed3.png")
         let animation = SKAction.animate(with: [planeImage, planeImage2, planeImage3], timePerFrame: 0.1)
-        let makePlaneFly = SKAction.repeatForever(animation)
+        makePlaneFly = SKAction.repeatForever(animation)
         
         plane = SKSpriteNode(texture: planeImage)
         plane.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
@@ -56,6 +58,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         plane.physicsBody = SKPhysicsBody(circleOfRadius: plane.size.height/2)
         plane.physicsBody?.isDynamic = true
         plane.physicsBody?.allowsRotation = false
+        plane.physicsBody?.affectedByGravity = false
         plane.physicsBody?.categoryBitMask = planeGroup
         plane.physicsBody?.collisionBitMask = objectGroup
         plane.physicsBody?.contactTestBitMask = gapGroup | objectGroup
@@ -99,7 +102,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gap.run(moveRocks)
             gap.physicsBody?.isDynamic = false
             gap.physicsBody?.categoryBitMask = gapGroup
-            gap.physicsBody?.contactTestBitMask = planeGroup
             movingObjects.addChild(gap)
         }
     }
@@ -108,7 +110,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.physicsWorld.contactDelegate = self
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -5)
         self.addChild(movingObjects)
-        
+        movingObjects.isPaused = true
+        movingObjects.speed = 0
         makeBackground()
         
         //make ground
@@ -128,10 +131,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel.zPosition = 9 //zed position is higher than rocks so the score can not be covered by rocks
         self.addChild(scoreLabel)
         
+        startLabel.fontName = "Helvetica"
+        startLabel.fontSize = 30
+        startLabel.text = "Tap to Play"
+        startLabel.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
+        startLabel.zPosition = 11
+        self.addChild(startLabel)
+        
         makePlane()
         
         //sets the timer for the intervals when new rocks appear on the scene
         _ = Timer.scheduledTimer(timeInterval: 3, target: self, selector: #selector(GameScene.makeRocks), userInfo: nil, repeats: true)
+        
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
@@ -158,8 +169,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         /* Called when a touch begins */
         if(gameOver == false){
+            startLabel.removeFromParent()
+            plane.physicsBody?.affectedByGravity = true
             plane.physicsBody?.velocity = CGVector(dx: 0,dy: 0)
             plane.physicsBody?.applyImpulse(CGVector(dx: 0,dy: 30))
+            movingObjects.isPaused = false
+            movingObjects.speed = 1
         }else{
             score = 0
             scoreLabel.text = "0"
@@ -174,7 +189,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    override func update(_ currentTime: TimeInterval) {
-        /* Called before each frame is rendered */
-    }
+
+    
+//    override func update(_ currentTime: TimeInterval) {
+//        /* Called before each frame is rendered */
+//        let value = (plane.physicsBody?.velocity.dy)! * 0.001
+//        let rotate = SKAction.rotate(toAngle: value, duration: 0, shortestUnitArc: true)
+//        plane.run(rotate)
+//    }
 }
